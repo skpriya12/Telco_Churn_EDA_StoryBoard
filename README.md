@@ -1,3 +1,34 @@
+# Telco Customer Churn — EDA Storyboard
+
+## Overview
+Business-focused exploratory data analysis (EDA) project designed to identify churn drivers, high-risk revenue segments, and actionable retention strategies for a telecom subscription business. The analysis combines visual storytelling with statistical hypothesis testing to simulate an executive-level analytics workflow.
+
+---
+
+## Business Objective
+- Identify customer segments most likely to churn  
+- Quantify revenue risk drivers  
+- Recommend product, pricing, and operational levers to improve retention  
+
+---
+
+## Dataset
+- Source: Kaggle — `blastchar/telco-customer-churn`  
+- Size: 7,043 customers, 21 features  
+- Note: 11 missing values in `TotalCharges` (new customers), excluded from lifetime revenue analysis
+
+---
+
+## Tech Stack
+- Python
+- Pandas
+- Seaborn / Matplotlib
+- SciPy
+- Git / GitHub
+
+---
+
+## Repository Structure
 
 ---
 
