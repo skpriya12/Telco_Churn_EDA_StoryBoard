@@ -1,12 +1,11 @@
 # Telco Customer Churn — EDA Storyboard (12 Insights + 3 Hypotheses)
+# This version SAVES all charts to /visuals for GitHub Actions + portfolio use
 
-
+import os
 import pandas as pd
 import numpy as np
-
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 from scipy import stats
 
 # ----------------------------
@@ -16,28 +15,35 @@ sns.set_theme(style="whitegrid", context="talk")
 plt.rcParams["figure.figsize"] = (10, 6)
 
 # ----------------------------
+# Output directory for charts
+# ----------------------------
+OUTPUT_DIR = "visuals"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def save_show(filename):
+    """Save figure to visuals/ and close plot (CI-safe)."""
+    path = os.path.join(OUTPUT_DIR, filename)
+    plt.tight_layout()
+    plt.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"Saved: {path}")
+
+# ----------------------------
 # Load data
 # ----------------------------
-# Update path to where you saved the Kaggle file
-# Typical Kaggle file name: "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+CSV_PATH = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+df = pd.read_csv(CSV_PATH)
 
-df = pd.read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv")
 # ----------------------------
 # Basic cleaning
 # ----------------------------
-# Strip whitespace in column names (just in case)
 df.columns = [c.strip() for c in df.columns]
-
-# Convert TotalCharges to numeric (it sometimes has blanks/spaces)
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
-# Convert SeniorCitizen to category labels for nicer plots
 if "SeniorCitizen" in df.columns:
     df["SeniorCitizen"] = df["SeniorCitizen"].map({0: "No", 1: "Yes"})
 
-# Ensure Churn is consistent
 df["Churn"] = df["Churn"].astype(str)
-
 
 # ----------------------------
 # Helper functions
@@ -54,9 +60,6 @@ def churn_rate_by(group_col: str) -> pd.DataFrame:
     tab["ChurnRate"] = (tab["ChurnRate"] * 100).round(2)
     return tab
 
-def show():
-    plt.tight_layout()
-    plt.show()
 # ----------------------------
 # Insight 1 — Data overview & missingness
 # ----------------------------
@@ -66,7 +69,7 @@ print("\nDtypes:\n", df.dtypes)
 
 sns.heatmap(df.isnull(), cbar=False)
 plt.title("Insight 1: Missing Values Heatmap")
-show()
+save_show("01_missing_values.png")
 
 # ----------------------------
 # Insight 2 — Distribution of MonthlyCharges
@@ -74,21 +77,22 @@ show()
 sns.histplot(df["MonthlyCharges"], kde=True)
 plt.title("Insight 2: Distribution of Monthly Charges")
 plt.xlabel("MonthlyCharges")
-show()
+save_show("02_monthly_charges_dist.png")
+
 # ----------------------------
-# Insight 3 — Distribution of TotalCharges (with NaNs)
+# Insight 3 — Distribution of TotalCharges
 # ----------------------------
 sns.histplot(df["TotalCharges"].dropna(), kde=True)
 plt.title("Insight 3: Distribution of Total Charges")
 plt.xlabel("TotalCharges")
-show()
+save_show("03_total_charges_dist.png")
 
 # ----------------------------
 # Insight 4 — Overall churn breakdown
 # ----------------------------
 sns.countplot(x="Churn", data=df)
 plt.title("Insight 4: Churn Distribution")
-show()
+save_show("04_churn_distribution.png")
 
 # ----------------------------
 # Insight 5 — Churn by Contract Type
@@ -96,18 +100,19 @@ show()
 sns.countplot(x="Contract", hue="Churn", data=df)
 plt.title("Insight 5: Churn by Contract Type")
 plt.xticks(rotation=15)
-show()
+save_show("05_churn_by_contract.png")
 
 print("\nChurn rate by Contract:\n", churn_rate_by("Contract"))
+
 # ----------------------------
 # Insight 6 — Tenure distribution + churn separation
 # ----------------------------
 sns.histplot(data=df, x="tenure", hue="Churn", bins=30, kde=True, element="step")
 plt.title("Insight 6: Tenure Distribution by Churn")
 plt.xlabel("Tenure (months)")
-show()
+save_show("06_tenure_distribution.png")
 
-# Create tenure buckets for segmented view
+# Tenure buckets
 df["TenureBucket"] = pd.cut(
     df["tenure"],
     bins=[0, 6, 12, 24, 48, 72],
@@ -117,21 +122,21 @@ df["TenureBucket"] = pd.cut(
 
 sns.countplot(x="TenureBucket", hue="Churn", data=df)
 plt.title("Insight 6b: Churn by Tenure Bucket")
-show()
+save_show("07_churn_by_tenure_bucket.png")
 
 # ----------------------------
 # Insight 7 — MonthlyCharges vs Churn
 # ----------------------------
 sns.boxplot(x="Churn", y="MonthlyCharges", data=df)
 plt.title("Insight 7: Monthly Charges by Churn")
-show()
+save_show("08_monthly_charges_vs_churn.png")
 
 # ----------------------------
 # Insight 8 — Payment method risk
 # ----------------------------
 sns.countplot(y="PaymentMethod", hue="Churn", data=df)
 plt.title("Insight 8: Churn by Payment Method")
-show()
+save_show("09_churn_by_payment_method.png")
 
 print("\nChurn rate by PaymentMethod:\n", churn_rate_by("PaymentMethod"))
 
@@ -141,19 +146,19 @@ print("\nChurn rate by PaymentMethod:\n", churn_rate_by("PaymentMethod"))
 sns.countplot(x="InternetService", hue="Churn", data=df)
 plt.title("Insight 9: Churn by Internet Service Type")
 plt.xticks(rotation=15)
-show()
+save_show("10_churn_by_internet_service.png")
 
 print("\nChurn rate by InternetService:\n", churn_rate_by("InternetService"))
 
 # ----------------------------
-# Insight 10 — Support features & churn (TechSupport, OnlineSecurity)
+# Insight 10 — Support features & churn
 # ----------------------------
 for col in ["TechSupport", "OnlineSecurity"]:
     if col in df.columns:
         sns.countplot(x=col, hue="Churn", data=df)
         plt.title(f"Insight 10: Churn by {col}")
         plt.xticks(rotation=15)
-        show()
+        save_show(f"11_churn_by_{col.lower()}.png")
         print(f"\nChurn rate by {col}:\n", churn_rate_by(col))
 
 # ----------------------------
@@ -162,7 +167,7 @@ for col in ["TechSupport", "OnlineSecurity"]:
 sns.countplot(x="PaperlessBilling", hue="Churn", data=df)
 plt.title("Insight 11: Churn by Paperless Billing")
 plt.xticks(rotation=15)
-show()
+save_show("12_churn_by_paperless_billing.png")
 
 print("\nChurn rate by PaperlessBilling:\n", churn_rate_by("PaperlessBilling"))
 
@@ -174,23 +179,20 @@ corr = df[num_cols].corr(numeric_only=True)
 
 sns.heatmap(corr, annot=True, cmap="coolwarm", center=0)
 plt.title("Insight 12: Correlation Heatmap (Numeric Features)")
-show()
-
+save_show("13_correlation_heatmap.png")
 
 # ============================================================
-# Hypotheses (2–3)
+# Hypotheses
 # ============================================================
 
 # ----------------------------
-# Hypothesis 1: Customers using more services churn less
-# Build a simple ServiceCount from service columns (Yes/No)
+# Hypothesis 1: More services → lower churn
 # ----------------------------
 service_cols = [
     "PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
     "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies"
 ]
 
-# Some columns contain 'No internet service' or 'No phone service' → treat as 0
 def yes_to_one(x):
     return 1 if x == "Yes" else 0
 
@@ -203,7 +205,7 @@ df["ServiceCount"] = service_matrix.sum(axis=1)
 
 sns.boxplot(x="Churn", y="ServiceCount", data=df)
 plt.title("Hypothesis 1: Service Count vs Churn")
-show()
+save_show("14_service_count_vs_churn.png")
 
 retained = df.loc[df["Churn"] == "No", "ServiceCount"].dropna()
 churned = df.loc[df["Churn"] == "Yes", "ServiceCount"].dropna()
@@ -211,8 +213,7 @@ t1 = stats.ttest_ind(retained, churned, equal_var=False)
 print("\nHypothesis 1 t-test (ServiceCount retained vs churned):", t1)
 
 # ----------------------------
-# Hypothesis 2: Month-to-month contracts have higher churn
-# Chi-square test on Contract vs Churn
+# Hypothesis 2: Contract type ↔ churn
 # ----------------------------
 contingency = pd.crosstab(df["Contract"], df["Churn"])
 chi2, p, dof, expected = stats.chi2_contingency(contingency)
@@ -221,25 +222,25 @@ print("chi2:", chi2, "p:", p, "dof:", dof)
 print("contingency:\n", contingency)
 
 # ----------------------------
-# Hypothesis 3: High monthly charges increase early churn risk (tenure <= 6)
-# KDE distribution by churn for early-tenure customers
+# Hypothesis 3: High charges → early churn
 # ----------------------------
 early = df[df["tenure"] <= 6].copy()
 
 sns.kdeplot(data=early, x="MonthlyCharges", hue="Churn", fill=True, common_norm=False)
-plt.title("Hypothesis 3: Early Tenure (<=6m) MonthlyCharges by Churn")
-show()
+plt.title("Hypothesis 3: Early Tenure MonthlyCharges by Churn")
+save_show("15_early_tenure_pricing_risk.png")
 
-# Optional: compare early churned vs retained monthly charges (t-test)
 early_retained = early.loc[early["Churn"] == "No", "MonthlyCharges"].dropna()
 early_churned = early.loc[early["Churn"] == "Yes", "MonthlyCharges"].dropna()
 t3 = stats.ttest_ind(early_retained, early_churned, equal_var=False)
 print("\nHypothesis 3 t-test (Early MonthlyCharges retained vs churned):", t3)
 
 # ----------------------------
-# Summary tables (optional)
+# Summary tables
 # ----------------------------
 print("\nTop churn rates by segment (Contract, InternetService, PaymentMethod):")
 print("\nContract:\n", churn_rate_by("Contract"))
 print("\nInternetService:\n", churn_rate_by("InternetService"))
 print("\nPaymentMethod:\n", churn_rate_by("PaymentMethod"))
+
+print("\nEDA completed. Charts saved to /visuals")
